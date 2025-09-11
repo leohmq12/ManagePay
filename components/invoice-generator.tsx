@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Send, Eye, Copy, Mail, Share2, CheckCircle } from "lucide-react"
+import { Plus, Trash2, Send, Eye, Copy, Mail, Share2, CheckCircle, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { EmailInvoiceDialog } from "@/components/email-invoice-dialog"
 import { ShareInvoiceDialog } from "@/components/share-invoice-dialog"
@@ -24,6 +24,9 @@ interface InvoiceItem {
   amount: number
 }
 
+// Helper: generate invoice number
+const generateInvoiceNumber = () => `INV-${Date.now()}`
+
 export function InvoiceGenerator() {
   const { toast } = useToast()
   const { companies, settings } = useAppStore()
@@ -31,10 +34,11 @@ export function InvoiceGenerator() {
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientAddress, setClientAddress] = useState("")
-  const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`)
+  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber())
   const [dueDate, setDueDate] = useState("")
   const [selectedCurrency, setSelectedCurrency] = useState(settings.defaultCurrency)
-  const [taxRate, setTaxRate] = useState(settings.defaultTaxRate * 100) // Convert to percentage
+  // taxRate is now number | null so we can represent an empty field with null
+  const [taxRate, setTaxRate] = useState<number | null>(settings.defaultTaxRate * 100) // %
   const [items, setItems] = useState<InvoiceItem[]>([{ id: "1", description: "", quantity: 1, rate: 0, amount: 0 }])
   const [notes, setNotes] = useState("")
   const [showSharingOptions, setShowSharingOptions] = useState(false)
@@ -70,7 +74,9 @@ export function InvoiceGenerator() {
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
-  const tax = subtotal * (taxRate / 100)
+  // use taxRateNumeric which treats null as 0
+  const taxRateNumeric = taxRate ?? 0
+  const tax = subtotal * (taxRateNumeric / 100)
   const total = subtotal + tax
 
   const generateInvoice = () => {
@@ -83,7 +89,6 @@ export function InvoiceGenerator() {
       return
     }
 
-    // Here you would typically send this to your backend
     const invoiceData = {
       company: selectedCompany,
       client: { name: clientName, email: clientEmail, address: clientAddress },
@@ -93,7 +98,7 @@ export function InvoiceGenerator() {
       items,
       subtotal,
       tax,
-      taxRate: taxRate / 100,
+      taxRate: taxRateNumeric / 100,
       total,
       notes,
     }
@@ -108,13 +113,26 @@ export function InvoiceGenerator() {
     setShowSharingOptions(true)
   }
 
+  const resetInvoice = () => {
+    setSelectedCompany(null)
+    setClientName("")
+    setClientEmail("")
+    setClientAddress("")
+    setInvoiceNumber(generateInvoiceNumber())
+    setDueDate("")
+    setSelectedCurrency(settings.defaultCurrency)
+    setTaxRate(settings.defaultTaxRate * 100)
+    setItems([{ id: "1", description: "", quantity: 1, rate: 0, amount: 0 }])
+    setNotes("")
+    setShowSharingOptions(false)
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Company Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Badge variant="outline">Step 1</Badge>
             Select Your Company
           </CardTitle>
           <CardDescription>Choose which company this invoice is from</CardDescription>
@@ -163,7 +181,6 @@ export function InvoiceGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Badge variant="outline">Step 2</Badge>
             Client Information
           </CardTitle>
           <CardDescription>Enter your client's details</CardDescription>
@@ -207,20 +224,30 @@ export function InvoiceGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Badge variant="outline">Step 3</Badge>
             Invoice Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="invoiceNumber">Invoice Number</Label>
-              <Input id="invoiceNumber" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} />
+              <Label>Invoice Number</Label>
+              <p className="p-2 rounded-md border bg-muted text-sm font-mono">{invoiceNumber}</p>
             </div>
+
+            {/* Due Date with aligned calendar icon */}
             <div>
               <Label htmlFor="dueDate">Due Date</Label>
-              <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <div className="relative">
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="pr-10" /* make room for the icon */
+                />
+              </div>
             </div>
+
             <div>
               <Label htmlFor="currency">Currency</Label>
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
@@ -243,8 +270,16 @@ export function InvoiceGenerator() {
               <Input
                 id="taxRate"
                 type="number"
-                value={taxRate}
-                onChange={(e) => setTaxRate(Number.parseFloat(e.target.value) || 0)}
+                value={taxRate === null ? "" : taxRate}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === "") {
+                    setTaxRate(null)
+                    return
+                  }
+                  const parsed = parseFloat(val)
+                  setTaxRate(isNaN(parsed) ? null : parsed)
+                }}
                 placeholder="10"
                 min="0"
                 max="100"
@@ -259,7 +294,6 @@ export function InvoiceGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Badge variant="outline">Step 4</Badge>
             Invoice Items
           </CardTitle>
           <CardDescription>Add items or services to your invoice</CardDescription>
@@ -280,8 +314,11 @@ export function InvoiceGenerator() {
                   <Label>Quantity</Label>
                   <Input
                     type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.id, "quantity", Number.parseInt(e.target.value) || 0)}
+                    value={item.quantity === 0 ? "" : item.quantity}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      updateItem(item.id, "quantity", val === "" ? 0 : parseInt(val))
+                    }}
                     min="1"
                   />
                 </div>
@@ -289,8 +326,11 @@ export function InvoiceGenerator() {
                   <Label>Rate ({CURRENCIES.find((c) => c.code === selectedCurrency)?.symbol})</Label>
                   <Input
                     type="number"
-                    value={item.rate}
-                    onChange={(e) => updateItem(item.id, "rate", Number.parseFloat(e.target.value) || 0)}
+                    value={item.rate === 0 ? "" : item.rate}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      updateItem(item.id, "rate", val === "" ? 0 : parseFloat(val))
+                    }}
                     min="0"
                     step="0.01"
                   />
@@ -329,7 +369,7 @@ export function InvoiceGenerator() {
               <span>{formatCurrency(subtotal, selectedCurrency)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Tax ({taxRate}%):</span>
+              <span>Tax ({taxRateNumeric}%):</span>
               <span>{formatCurrency(tax, selectedCurrency)}</span>
             </div>
             <Separator />
@@ -345,7 +385,6 @@ export function InvoiceGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Badge variant="outline">Step 5</Badge>
             Additional Notes
           </CardTitle>
         </CardHeader>
@@ -411,11 +450,7 @@ export function InvoiceGenerator() {
                   }
                 />
 
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                  onClick={() => setShowSharingOptions(false)}
-                >
+                <Button variant="outline" className="flex-1 bg-transparent" onClick={resetInvoice}>
                   Create Another
                 </Button>
               </div>
