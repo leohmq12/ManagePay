@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CreditCard, Smartphone, QrCode, Link, DollarSign, Clock, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { BackButton } from "@/components/ui/back-button"
 import { useAppStore } from "@/lib/store"
 import { CURRENCIES, formatCurrency } from "@/lib/currencies"
 
@@ -122,7 +121,9 @@ export function PaymentTerminal() {
       return
     }
 
-    const paymentUrl = `${window.location.origin}/pay/link?amount=${amount}&description=${encodeURIComponent(description)}&currency=${selectedCurrency}`
+    const paymentUrl = `${window.location.origin}/pay/link?amount=${amount}&description=${encodeURIComponent(
+      description
+    )}&currency=${selectedCurrency}`
     navigator.clipboard.writeText(paymentUrl)
 
     toast({
@@ -131,13 +132,13 @@ export function PaymentTerminal() {
     })
   }
 
-  const processingFee = Number.parseFloat(amount || "0") * settings.processingFeeRate + settings.processingFeeFixed
+  const processingFee =
+    Number.parseFloat(amount || "0") * settings.processingFeeRate + settings.processingFeeFixed
   const totalWithFees = Number.parseFloat(amount || "0") + processingFee
 
   if (paymentSuccess) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <BackButton />
         <Card className="text-center">
           <CardContent className="pt-6">
             <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
@@ -154,8 +155,6 @@ export function PaymentTerminal() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <BackButton />
-
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-foreground mb-2">Payment Terminal</h1>
         <p className="text-muted-foreground">Accept payments quickly and securely</p>
