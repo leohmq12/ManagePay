@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dialog"
 import { Building2, Plus, Edit, Trash2, Settings, CreditCard, BarChart3, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { BackButton } from "@/components/ui/back-button"
 import { useAppStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/currencies"
 
@@ -122,7 +121,7 @@ export function CompanyManagement() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
-      <BackButton />
+
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
