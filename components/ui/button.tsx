@@ -2,7 +2,7 @@
 import * as React from "react";
 
 type Variant = "default" | "outline" | "ghost" | "destructive";
-type Size = "sm" | "md" | "lg";
+export type Size = "sm" | "md" | "lg";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;

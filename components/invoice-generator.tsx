@@ -1,15 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Send, Eye, Copy, Mail, Share2, CheckCircle, Calendar } from "lucide-react"
+import { Plus, Trash2, Send, Eye, Copy, Mail, Share2, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { EmailInvoiceDialog } from "@/components/email-invoice-dialog"
 import { ShareInvoiceDialog } from "@/components/share-invoice-dialog"
@@ -34,14 +33,24 @@ export function InvoiceGenerator() {
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientAddress, setClientAddress] = useState("")
-  const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber())
+  const [invoiceNumber, setInvoiceNumber] = useState("")   // fixed hydration mismatch
   const [dueDate, setDueDate] = useState("")
   const [selectedCurrency, setSelectedCurrency] = useState(settings.defaultCurrency)
-  // taxRate is now number | null so we can represent an empty field with null
   const [taxRate, setTaxRate] = useState<number | null>(settings.defaultTaxRate * 100) // %
   const [items, setItems] = useState<InvoiceItem[]>([{ id: "1", description: "", quantity: 1, rate: 0, amount: 0 }])
   const [notes, setNotes] = useState("")
   const [showSharingOptions, setShowSharingOptions] = useState(false)
+
+  // New states
+  const [previewInvoice, setPreviewInvoice] = useState(false)
+  const [drafts, setDrafts] = useState<any[]>([])
+
+  // Generate invoice number only after client mounts
+  useEffect(() => {
+    if (!invoiceNumber) {
+      setInvoiceNumber(generateInvoiceNumber())
+    }
+  }, [invoiceNumber])
 
   const addItem = () => {
     const newItem: InvoiceItem = {
@@ -74,10 +83,23 @@ export function InvoiceGenerator() {
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
-  // use taxRateNumeric which treats null as 0
   const taxRateNumeric = taxRate ?? 0
   const tax = subtotal * (taxRateNumeric / 100)
   const total = subtotal + tax
+
+  const invoiceData = {
+    company: selectedCompany,
+    client: { name: clientName, email: clientEmail, address: clientAddress },
+    invoiceNumber,
+    dueDate,
+    currency: selectedCurrency,
+    items,
+    subtotal,
+    tax,
+    taxRate: taxRateNumeric / 100,
+    total,
+    notes,
+  }
 
   const generateInvoice = () => {
     if (!selectedCompany || !clientName || !clientEmail || items.some((item) => !item.description)) {
@@ -89,20 +111,6 @@ export function InvoiceGenerator() {
       return
     }
 
-    const invoiceData = {
-      company: selectedCompany,
-      client: { name: clientName, email: clientEmail, address: clientAddress },
-      invoiceNumber,
-      dueDate,
-      currency: selectedCurrency,
-      items,
-      subtotal,
-      tax,
-      taxRate: taxRateNumeric / 100,
-      total,
-      notes,
-    }
-
     console.log("Generated Invoice:", invoiceData)
 
     toast({
@@ -111,6 +119,14 @@ export function InvoiceGenerator() {
     })
 
     setShowSharingOptions(true)
+  }
+
+  const saveAsDraft = () => {
+    setDrafts([...drafts, invoiceData])
+    toast({
+      title: "Saved as Draft",
+      description: `Invoice ${invoiceNumber} has been saved as a draft`,
+    })
   }
 
   const resetInvoice = () => {
@@ -125,6 +141,7 @@ export function InvoiceGenerator() {
     setItems([{ id: "1", description: "", quantity: 1, rate: 0, amount: 0 }])
     setNotes("")
     setShowSharingOptions(false)
+    setPreviewInvoice(false)
   }
 
   return (
@@ -132,9 +149,7 @@ export function InvoiceGenerator() {
       {/* Company Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Select Your Company
-          </CardTitle>
+          <CardTitle>Select Your Company</CardTitle>
           <CardDescription>Choose which company this invoice is from</CardDescription>
         </CardHeader>
         <CardContent>
@@ -180,9 +195,7 @@ export function InvoiceGenerator() {
       {/* Client Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Client Information
-          </CardTitle>
+          <CardTitle>Client Information</CardTitle>
           <CardDescription>Enter your client's details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -223,18 +236,18 @@ export function InvoiceGenerator() {
       {/* Invoice Details */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Invoice Details
-          </CardTitle>
+          <CardTitle>Invoice Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>Invoice Number</Label>
-              <p className="p-2 rounded-md border bg-muted text-sm font-mono">{invoiceNumber}</p>
+              <p className="p-2 rounded-md border bg-muted text-sm font-mono">
+                {invoiceNumber || "Generating..."}
+              </p>
             </div>
 
-            {/* Due Date with aligned calendar icon */}
+            {/* Due Date */}
             <div>
               <Label htmlFor="dueDate">Due Date</Label>
               <div className="relative">
@@ -243,7 +256,7 @@ export function InvoiceGenerator() {
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="pr-10" /* make room for the icon */
+                  className="pr-10"
                 />
               </div>
             </div>
@@ -293,14 +306,12 @@ export function InvoiceGenerator() {
       {/* Invoice Items */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Invoice Items
-          </CardTitle>
+          <CardTitle>Invoice Items</CardTitle>
           <CardDescription>Add items or services to your invoice</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {items.map((item, index) => (
+            {items.map((item) => (
               <div key={item.id} className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-12 md:col-span-5">
                   <Label>Description *</Label>
@@ -343,7 +354,6 @@ export function InvoiceGenerator() {
                   {items.length > 1 && (
                     <Button
                       variant="outline"
-                      size="icon"
                       onClick={() => removeItem(item.id)}
                       className="text-destructive hover:text-destructive"
                     >
@@ -384,9 +394,7 @@ export function InvoiceGenerator() {
       {/* Notes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Additional Notes
-          </CardTitle>
+          <CardTitle>Additional Notes</CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
@@ -407,11 +415,11 @@ export function InvoiceGenerator() {
                 <Send className="h-4 w-4 mr-2" />
                 Generate Invoice
               </Button>
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button variant="outline" onClick={() => setPreviewInvoice(true)} className="flex-1 bg-transparent">
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button variant="outline" onClick={saveAsDraft} className="flex-1 bg-transparent">
                 <Copy className="h-4 w-4 mr-2" />
                 Save as Draft
               </Button>
@@ -454,6 +462,17 @@ export function InvoiceGenerator() {
                   Create Another
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Preview Mode */}
+          {previewInvoice && (
+            <div className="mt-6 p-6 border rounded-lg bg-muted">
+              <h3 className="text-lg font-bold mb-4">Invoice Preview</h3>
+              <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(invoiceData, null, 2)}</pre>
+              <Button variant="outline" className="mt-4" onClick={() => setPreviewInvoice(false)}>
+                Close Preview
+              </Button>
             </div>
           )}
         </CardContent>

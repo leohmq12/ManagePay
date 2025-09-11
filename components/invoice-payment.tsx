@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, Building2, Mail, Calendar, CheckCircle, Lock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { BackButton } from "@/components/ui/back-button"
+import { BackButton } from  "@/components/ui/back-button"
 import { useAppStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/currencies"
 
