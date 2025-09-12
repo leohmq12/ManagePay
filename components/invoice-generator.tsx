@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Send, Eye, Copy, Mail, Share2, CheckCircle } from "lucide-react"
+import { Plus, Trash2, Send, Eye, Copy, Mail, Share2, CheckCircle, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { EmailInvoiceDialog } from "@/components/email-invoice-dialog"
 import { ShareInvoiceDialog } from "@/components/share-invoice-dialog"
 import { useAppStore } from "@/lib/store"
 import { CURRENCIES, formatCurrency } from "@/lib/currencies"
+import { InvoicePreview } from "@/components/invoice-preview"
+import { format } from "date-fns"
 
 interface InvoiceItem {
   id: string
@@ -408,75 +410,122 @@ export function InvoiceGenerator() {
 
       {/* Actions */}
       <Card>
-        <CardContent className="pt-6">
-          {!showSharingOptions ? (
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={generateInvoice} className="flex-1">
-                <Send className="h-4 w-4 mr-2" />
-                Generate Invoice
-              </Button>
-              <Button variant="outline" onClick={() => setPreviewInvoice(true)} className="flex-1 bg-transparent">
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
-              </Button>
-              <Button variant="outline" onClick={saveAsDraft} className="flex-1 bg-transparent">
-                <Copy className="h-4 w-4 mr-2" />
-                Save as Draft
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-center">
-                <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
-                <h3 className="font-medium">Invoice Generated Successfully!</h3>
-                <p className="text-sm text-muted-foreground">Invoice {invoiceNumber} is ready to send</p>
-              </div>
+  <CardContent className="pt-6">
+    {!showSharingOptions ? (
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button onClick={generateInvoice} className="flex-1">
+          <Send className="h-4 w-4 mr-2" />
+          Generate Invoice
+        </Button>
+        <Button variant="outline" onClick={() => setPreviewInvoice(true)} className="flex-1 bg-transparent">
+          <Eye className="h-4 w-4 mr-2" />
+          Preview
+        </Button>
+        <Button variant="outline" onClick={saveAsDraft} className="flex-1 bg-transparent">
+          <Copy className="h-4 w-4 mr-2" />
+          Save as Draft
+        </Button>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        <div className="text-center">
+          <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
+          <h3 className="font-medium">Invoice Generated Successfully!</h3>
+          <p className="text-sm text-muted-foreground">Invoice {invoiceNumber} is ready to send</p>
+        </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <EmailInvoiceDialog
-                  invoiceId={invoiceNumber}
-                  invoiceNumber={invoiceNumber}
-                  clientEmail={clientEmail}
-                  amount={total}
-                  trigger={
-                    <Button className="flex-1">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email Invoice
-                    </Button>
-                  }
-                />
-
-                <ShareInvoiceDialog
-                  invoiceId={invoiceNumber}
-                  invoiceNumber={invoiceNumber}
-                  amount={total}
-                  trigger={
-                    <Button variant="outline" className="flex-1 bg-transparent">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share Link
-                    </Button>
-                  }
-                />
-
-                <Button variant="outline" className="flex-1 bg-transparent" onClick={resetInvoice}>
-                  Create Another
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Preview Mode */}
-          {previewInvoice && (
-            <div className="mt-6 p-6 border rounded-lg bg-muted">
-              <h3 className="text-lg font-bold mb-4">Invoice Preview</h3>
-              <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(invoiceData, null, 2)}</pre>
-              <Button variant="outline" className="mt-4" onClick={() => setPreviewInvoice(false)}>
-                Close Preview
+        <div className="flex flex-col sm:flex-row gap-3">
+          <EmailInvoiceDialog
+            invoiceId={invoiceNumber}
+            invoiceNumber={invoiceNumber}
+            clientEmail={clientEmail}
+            amount={total}
+            invoiceData={invoiceData}
+            trigger={
+              <Button className="flex-1">
+                <Mail className="h-4 w-4 mr-2" />
+                Email Invoice
               </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            }
+          />
+
+          <ShareInvoiceDialog
+            invoiceId={invoiceNumber}
+            invoiceNumber={invoiceNumber}
+            amount={total}
+            trigger={
+              <Button variant="outline" className="flex-1 bg-transparent">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share Link
+              </Button>
+            }
+          />
+
+          <Button variant="outline" className="flex-1 bg-transparent" onClick={resetInvoice}>
+            Create Another
+          </Button>
+        </div>
+      </div>
+    )}
+
+    {/* Preview Mode */}
+    {previewInvoice && (
+      <div className="mt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <h3 className="text-lg font-bold">Invoice Preview</h3>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button 
+              onClick={() => {
+                // Function to download invoice as PDF
+                const invoiceElement = document.getElementById('invoice-preview');
+                if (invoiceElement) {
+                  // You would implement actual PDF generation here
+                  // For now, let's just show a toast
+                  toast({
+                    title: "Download Started",
+                    description: "Invoice download will be implemented with PDF generation",
+                  });
+                }
+              }}
+              className="w-full sm:w-auto"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Invoice
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setPreviewInvoice(false)}
+              className="w-full sm:w-auto"
+            >
+              Close Preview
+            </Button>
+          </div>
+        </div>
+        
+        {/* Responsive container for the invoice */}
+        <div className="overflow-x-auto">
+          <div className="min-w-full max-w-4xl mx-auto">
+            <InvoicePreview invoiceData={invoiceData} />
+          </div>
+        </div>
+        
+        <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2">
+          <Button onClick={generateInvoice} className="w-full sm:w-auto">
+            <Send className="h-4 w-4 mr-2" />
+            Generate Invoice
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setPreviewInvoice(false)}
+            className="w-full sm:w-auto"
+          >
+            Close
+          </Button>
+        </div>
+      </div>
+    )}
+  </CardContent>
+</Card>
     </div>
   )
 }
