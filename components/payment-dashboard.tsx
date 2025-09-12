@@ -286,7 +286,11 @@ export function PaymentDashboard() {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="revenue"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, value, index }) => {
+                      const total = companyRevenue.reduce((sum, entry) => sum + entry.revenue, 0)
+                      const percent = total > 0 ? (value as number) / total : 0
+                      return `${name}: ${(percent * 100).toFixed(0)}%`
+                    }}
                   >
                     {companyRevenue.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
