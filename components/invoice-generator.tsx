@@ -504,23 +504,34 @@ export function InvoiceGenerator() {
                 />
               </div>
               <div className="col-span-4 md:col-span-2">
-                <Label>Quantity</Label>
+                <Label>Quantity</Label> 
                 <Input
                   type="number"
-                  value={item.quantity}
+                  value={item.quantity === 0 ? "" : item.quantity}
                   onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 0)}
                   min="1"
-                />
+                />  
               </div>
               <div className="col-span-4 md:col-span-2">
                 <Label>Rate</Label>
                 <Input
                   type="number"
                   value={item.rate}
+                  onFocus={(e) => {
+                    if (e.target.value === "0") {
+                      e.target.value = "";
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === "") {
+                      updateItem(item.id, "rate", 0);
+                    }
+                  }}
                   onChange={(e) => updateItem(item.id, "rate", parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
                 />
+
               </div>
               <div className="col-span-3 md:col-span-2">
                 <Label>Amount</Label>
