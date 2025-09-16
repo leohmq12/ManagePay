@@ -36,7 +36,11 @@ export function InvoiceGenerator() {
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientAddress, setClientAddress] = useState("")
+ dev
   const [invoiceNumber, setInvoiceNumber] = useState("")
+
+  const [invoiceNumber, setInvoiceNumber] = useState("") // fixed hydration mismatch
+ main
   const [dueDate, setDueDate] = useState("")
   const [selectedCurrency, setSelectedCurrency] = useState(settings.defaultCurrency)
   const [taxRate, setTaxRate] = useState<number>(settings.defaultTaxRate * 100)
@@ -46,7 +50,6 @@ export function InvoiceGenerator() {
   const [notes, setNotes] = useState("")
   const [showSharingOptions, setShowSharingOptions] = useState(false)
   const [previewInvoice, setPreviewInvoice] = useState(false)
-  const [drafts, setDrafts] = useState<any[]>([])
 
   // Generate invoice number after mount
   useEffect(() => {
@@ -156,6 +159,7 @@ export function InvoiceGenerator() {
     setShowSharingOptions(true)
   }
 
+ dev
   const saveAsDraft = () => {
     setDrafts([...drafts, { ...invoiceData, invoiceNumber }])
     toast({
@@ -164,6 +168,8 @@ export function InvoiceGenerator() {
     })
   }
 
+
+ main
   const resetInvoice = () => {
     setSelectedCompany(null)
     setClientName("")
@@ -348,6 +354,7 @@ export function InvoiceGenerator() {
               <Button onClick={() => (window.location.href = "/companies")}>Add Company</Button>
             </div>
           ) : (
+ dev
             <>
               <Select
                 onValueChange={(val) =>
@@ -373,6 +380,53 @@ export function InvoiceGenerator() {
                 </div>
               )}
             </>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left side - Dropdown */}
+              <div>
+                <Select onValueChange={(value) => setSelectedCompany(companies.find((c) => c.id === value) || null)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies
+                      .filter((c) => c.isActive)
+                      .map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{company.name}</span>
+                            <span className="text-sm text-muted-foreground">{company.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Right side - Selected Company Info */}
+              <div>
+                {selectedCompany ? (
+                  <div className="p-4 bg-muted rounded-lg h-full">
+                    <h4 className="font-medium mb-2">{selectedCompany.name}</h4>
+                    <p className="text-sm text-muted-foreground mb-1">{selectedCompany.address}</p>
+                    <p className="text-sm text-muted-foreground">{selectedCompany.email}</p>
+                    {selectedCompany.phone && (
+                      <p className="text-sm text-muted-foreground">{selectedCompany.phone}</p>
+                    )}
+                    {selectedCompany.website && (
+                      <p className="text-sm text-muted-foreground">{selectedCompany.website}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-muted/50 rounded-lg h-full flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Select a company to see details
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+ main
           )}
         </CardContent>
       </Card>
@@ -560,6 +614,7 @@ export function InvoiceGenerator() {
 
       {/* Actions */}
       <Card>
+ dev
         <CardContent className="pt-4">
           {!showSharingOptions ? (
             <div className="flex flex-col sm:flex-row gap-3">
@@ -634,10 +689,63 @@ export function InvoiceGenerator() {
                   Create Another
                 </Button>
 
+
+        <CardContent className="pt-6">
+          {!showSharingOptions ? (
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={generateInvoice} className="flex-1">
+                <Send className="h-4 w-4 mr-2" />
+                Generate Invoice
+              </Button>
+              <Button variant="outline" onClick={() => setPreviewInvoice(true)} className="flex-1 bg-transparent">
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-center">
+                <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
+                <h3 className="font-medium">Invoice Generated Successfully!</h3>
+                <p className="text-sm text-muted-foreground">Invoice {invoiceNumber} is ready to send</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <EmailInvoiceDialog
+                  invoiceId={invoiceNumber}
+                  invoiceNumber={invoiceNumber}
+                  clientEmail={clientEmail}
+                  amount={total}
+                  invoiceData={invoiceData}
+                  trigger={
+                    <Button className="flex-1">
+                      <Mail className="h-4 w-4 mr-2" />
+                      Email Invoice
+                    </Button>
+                  }
+                />
+
+                <ShareInvoiceDialog
+                  invoiceId={invoiceNumber}
+                  invoiceNumber={invoiceNumber}
+                  amount={total}
+                  trigger={
+                    <Button variant="outline" className="flex-1 bg-transparent">
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share Link
+                    </Button>
+                  }
+                />
+
+                <Button variant="outline" className="flex-1 bg-transparent" onClick={resetInvoice}>
+                  Create Another
+                </Button>
+ main
               </div>
             </div>
           )}
 
+ dev
           {previewInvoice && (
             <div className="mt-6">
               <div className="flex justify-between mb-3">
@@ -658,6 +766,57 @@ export function InvoiceGenerator() {
           )}
         </CardContent>
       </Card>
+
+          {/* Preview Mode */}
+          {previewInvoice && (
+            <div className="mt-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h3 className="text-lg font-bold">Invoice Preview</h3>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button
+                    onClick={() => {
+                      // Function to download invoice as PDF
+                      const invoiceElement = document.getElementById("invoice-preview")
+                      if (invoiceElement) {
+                        toast({
+                          title: "Download Started",
+                          description: "Invoice download will be implemented with PDF generation",
+                        })
+                      }
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Invoice
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPreviewInvoice(false)}
+                    className="w-full sm:w-auto"
+                  >
+                    Close Preview
+                  </Button>
+                </div>
+              </div>
+
+              {/* Responsive container for the invoice */}
+              <div className="overflow-x-auto">
+                <div className="min-w-full max-w-4xl mx-auto">
+                  <InvoicePreview invoiceData={invoiceData} />
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col sm:flex-row justify-end gap-3">
+          <Button onClick={generateInvoice} className="flex-1 sm:flex-none">
+            <Send className="h-4 w-4 mr-2" />
+            Generate Invoice
+          </Button>
+        </div>
+      </div>
+    )}
+  </CardContent>
+</Card>
+ 
     </div>
   )
 }

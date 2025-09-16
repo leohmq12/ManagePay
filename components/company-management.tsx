@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -54,6 +54,33 @@ export function CompanyManagement() {
     website: "",
     taxId: "",
   })
+  const [stripeStatus, setStripeStatus] = useState<"connected" | "disconnected" | "checking">("checking")
+
+  useEffect(() => {
+    checkStripeConnection()
+  }, [])
+
+  const checkStripeConnection = async () => {
+    try {
+      // Replace this with your actual Stripe connection check
+      const isConnected = await verifyStripeConnection()
+      setStripeStatus(isConnected ? "connected" : "disconnected")
+    } catch (error) {
+      console.error("Failed to check Stripe connection:", error)
+      setStripeStatus("disconnected")
+    }
+  }
+
+  const verifyStripeConnection = async (): Promise<boolean> => {
+    // Replace this with your actual implementation to check Stripe connection
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // For demo purposes, randomly return connected status
+        // In a real app, you would check your backend or Stripe API
+        resolve(Math.random() > 0.5)
+      }, 500)
+    })
+  }
 
   const formatCurrencyWithSettings = (amount: number) => {
     return formatCurrency(amount, settings.defaultCurrency)
@@ -121,8 +148,6 @@ export function CompanyManagement() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
-
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -438,10 +463,33 @@ export function CompanyManagement() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <p className="font-medium">Stripe Account Status</p>
-                <p className="text-sm text-muted-foreground">Connected and ready to accept payments</p>
+                <p className="text-sm text-muted-foreground">
+                  {stripeStatus === "connected" 
+                    ? "Connected and ready to accept payments" 
+                    : stripeStatus === "disconnected"
+                    ? "Not connected. Please check your Stripe settings."
+                    : "Checking connection status..."}
+                </p>
               </div>
-              <Badge variant="default">Connected</Badge>
+              {stripeStatus === "checking" ? (
+                <div className="h-2 w-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              ) : (
+                <Badge variant={stripeStatus === "connected" ? "default" : "destructive"}>
+                  {stripeStatus === "connected" ? "Connected" : "Disconnected"}
+                </Badge>
+              )}
             </div>
+            {stripeStatus === "disconnected" && (
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <h4 className="font-medium text-destructive mb-2">Action Required</h4>
+                <p className="text-sm text-destructive mb-3">
+                  Your Stripe account is not connected. Please configure your Stripe settings to accept payments.
+                </p>
+                <Button variant="outline" size="sm" onClick={checkStripeConnection}>
+                  Check Again
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

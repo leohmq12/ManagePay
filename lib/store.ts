@@ -28,13 +28,39 @@ interface AppSettings {
   processingFeeFixed: number
 }
 
+// ✅ Fixed Draft interface to match actual usage
+export interface Draft {
+  id: string  // Always string, never undefined
+  data: {
+    company: Company | null
+    client: {
+      name: string
+      email: string
+      address: string
+    }
+    invoiceNumber: string
+    dueDate: string
+    currency: string
+    items: any[]
+    subtotal: number
+    tax: number
+    taxRate: number
+    total: number
+    notes: string
+  }
+}
+
 interface AppState {
   companies: Company[]
   settings: AppSettings
+
+  // Company actions
   addCompany: (company: Omit<Company, "id" | "createdAt" | "stats">) => void
   updateCompany: (id: string, updates: Partial<Company>) => void
   deleteCompany: (id: string) => void
   toggleCompanyStatus: (id: string) => void
+
+  // Settings actions
   updateSettings: (settings: Partial<AppSettings>) => void
 }
 
@@ -48,6 +74,8 @@ export const useAppStore = create<AppState>()(
         processingFeeRate: 0.029, // 2.9%
         processingFeeFixed: 0.3, // $0.30
       },
+
+      // ✅ Company actions
       addCompany: (companyData) => {
         const company: Company = {
           ...companyData,
@@ -65,7 +93,9 @@ export const useAppStore = create<AppState>()(
       },
       updateCompany: (id, updates) => {
         set((state) => ({
-          companies: state.companies.map((company) => (company.id === id ? { ...company, ...updates } : company)),
+          companies: state.companies.map((company) =>
+            company.id === id ? { ...company, ...updates } : company,
+          ),
         }))
       },
       deleteCompany: (id) => {
@@ -80,6 +110,8 @@ export const useAppStore = create<AppState>()(
           ),
         }))
       },
+
+      // ✅ Settings
       updateSettings: (newSettings) => {
         set((state) => ({
           settings: { ...state.settings, ...newSettings },
@@ -87,7 +119,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: "payment-terminal-storage",
+      name: "payment-terminal-storage", // persisted key in localStorage
     },
   ),
 )

@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAppStore } from "@/lib/store"
 import { CURRENCIES, formatCurrency } from "@/lib/currencies"
 
+
 interface PaymentMethod {
   id: string
   name: string

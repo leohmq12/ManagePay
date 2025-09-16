@@ -30,7 +30,7 @@ export function Sidebar() {
       {/* Mobile menu button */}
       <Button
         variant="ghost"
-        size="icon"
+        size="sm"
         className="fixed top-4 left-4 z-50 md:hidden"
         onClick={() => setIsOpen(!isOpen)}
       >
