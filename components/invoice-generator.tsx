@@ -533,7 +533,7 @@ export function InvoiceGenerator() {
               <div className="col-span-1">
                 <Button 
                   variant="outline" 
-                  size="icon" 
+                  size="sm" 
                   onClick={() => removeItem(item.id)}
                   disabled={items.length <= 1}
                   className="h-10 w-10"
