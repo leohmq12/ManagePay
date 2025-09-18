@@ -1,7 +1,5 @@
-"use client"
-
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,9 +11,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Share2, Copy, Mail, MessageSquare, QrCode, Download, Phone, LinkIcon } from "lucide-react"
+import { Share2, Copy, Mail, MessageSquare, QrCode, Download, LinkIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { QRCodeCanvas } from "qrcode.react"
 
@@ -34,7 +31,8 @@ export function ShareInvoiceDialog({ invoiceId, invoiceNumber, amount, trigger }
   const [whatsappNumber, setWhatsappNumber] = useState("")
   const [activeTab, setActiveTab] = useState("link")
 
-  const paymentUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/pay/${invoiceId}`
+  // 🔑 Main Change: paymentUrl ab /terminal hamesha
+  const paymentUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/terminal`
   const shortUrl = `pay.ly/${invoiceId.slice(-8)}`
 
   const copyToClipboard = (text: string, type: string) => {
@@ -70,7 +68,6 @@ export function ShareInvoiceDialog({ invoiceId, invoiceNumber, amount, trigger }
     )}\n\nPlease pay securely here: ${paymentUrl}\n\nThank you!`
 
     const smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(smsText)}`
-
     window.location.href = smsUrl
 
     toast({
@@ -82,42 +79,47 @@ export function ShareInvoiceDialog({ invoiceId, invoiceNumber, amount, trigger }
   }
 
   const sendWhatsApp = () => {
-    if (!whatsappNumber) {
-      toast({
-        title: "WhatsApp Number Required",
-        description: "Please enter the client's WhatsApp number",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
-    const cleanedNumber = whatsappNumber.replace(/[\s\(\)\-]/g, '')
-    
-    if (!phoneRegex.test(cleanedNumber)) {
-      toast({
-        title: "Invalid WhatsApp Number",
-        description: "Please enter a valid WhatsApp number",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const whatsappText = `Invoice Payment Request\n\nInvoice #: ${invoiceNumber}\nAmount: $${amount.toFixed(
-      2
-    )}\n\nPlease pay securely here: ${paymentUrl}\n\nThank you!`
-
-    const whatsappUrl = `https://wa.me/${cleanedNumber}?text=${encodeURIComponent(whatsappText)}`
-
-    window.open(whatsappUrl, "_blank")
-
+  if (!whatsappNumber) {
     toast({
-      title: "WhatsApp Opened!",
-      description: "WhatsApp is open with your invoice template",
+      title: "WhatsApp Number Required",
+      description: "Please enter the client's WhatsApp number",
+      variant: "destructive",
     })
-
-    setWhatsappNumber("")
+    return
   }
+
+  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+  const cleanedNumber = whatsappNumber.replace(/[\s\(\)\-]/g, '')
+
+  if (!phoneRegex.test(cleanedNumber)) {
+    toast({
+      title: "Invalid WhatsApp Number",
+      description: "Please enter a valid WhatsApp number",
+      variant: "destructive",
+    })
+    return
+  }
+
+  // ✅ Link same line pe, no extra newline after it
+  const whatsappText = `Invoice Payment Request
+
+Invoice #: ${invoiceNumber}
+Amount: $${amount.toFixed(2)}
+
+Please pay securely here: ${paymentUrl} 
+Thank you!`
+
+  const whatsappUrl = `https://wa.me/${cleanedNumber}?text=${encodeURIComponent(whatsappText)}`
+  window.location.href = whatsappUrl
+
+  toast({
+    title: "WhatsApp Opened!",
+    description: "WhatsApp is open with your invoice template",
+  })
+
+  setWhatsappNumber("")
+}
+
 
   const sendEmail = () => {
     if (!emailAddress) {
@@ -169,7 +171,6 @@ Your Company Name
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
       emailAddress
     )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-
     window.open(gmailUrl, "_blank")
 
     toast({
@@ -197,7 +198,6 @@ Your Company Name
     })
   }
 
-  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
