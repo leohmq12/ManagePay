@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,8 +15,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Share2, Copy, Mail, MessageSquare, QrCode } from "lucide-react"
+import { Share2, Copy, Mail, MessageSquare, QrCode, Download, Phone, LinkIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { QRCodeCanvas } from "qrcode.react"
 
 interface ShareInvoiceDialogProps {
   invoiceId: string
@@ -30,6 +30,9 @@ export function ShareInvoiceDialog({ invoiceId, invoiceNumber, amount, trigger }
   const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState("")
+  const [emailAddress, setEmailAddress] = useState("")
+  const [whatsappNumber, setWhatsappNumber] = useState("")
+  const [activeTab, setActiveTab] = useState("link")
 
   const paymentUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/pay/${invoiceId}`
   const shortUrl = `pay.ly/${invoiceId.slice(-8)}`
@@ -52,139 +55,297 @@ export function ShareInvoiceDialog({ invoiceId, invoiceNumber, amount, trigger }
       return
     }
 
-    const smsText = `Hi! Your invoice ${invoiceNumber} for $${amount.toFixed(2)} is ready. Pay securely here: ${paymentUrl}`
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+    if (!phoneRegex.test(phoneNumber.replace(/[\s\(\)\-]/g, ''))) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      })
+      return
+    }
 
-    // In a real app, you would integrate with an SMS service like Twilio
-    console.log("Sending SMS to:", phoneNumber, "Message:", smsText)
+    const smsText = `Invoice Payment Request\n\nInvoice #: ${invoiceNumber}\nAmount: $${amount.toFixed(
+      2
+    )}\n\nPlease pay securely here: ${paymentUrl}\n\nThank you!`
+
+    const smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(smsText)}`
+
+    window.location.href = smsUrl
 
     toast({
-      title: "SMS Sent!",
-      description: `Payment link sent to ${phoneNumber}`,
+      title: "SMS Ready!",
+      description: "Your messaging app will open with the payment details",
+    })
+
+    setPhoneNumber("")
+  }
+
+  const sendWhatsApp = () => {
+    if (!whatsappNumber) {
+      toast({
+        title: "WhatsApp Number Required",
+        description: "Please enter the client's WhatsApp number",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+    const cleanedNumber = whatsappNumber.replace(/[\s\(\)\-]/g, '')
+    
+    if (!phoneRegex.test(cleanedNumber)) {
+      toast({
+        title: "Invalid WhatsApp Number",
+        description: "Please enter a valid WhatsApp number",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const whatsappText = `Invoice Payment Request\n\nInvoice #: ${invoiceNumber}\nAmount: $${amount.toFixed(
+      2
+    )}\n\nPlease pay securely here: ${paymentUrl}\n\nThank you!`
+
+    const whatsappUrl = `https://wa.me/${cleanedNumber}?text=${encodeURIComponent(whatsappText)}`
+
+    window.open(whatsappUrl, "_blank")
+
+    toast({
+      title: "WhatsApp Opened!",
+      description: "WhatsApp is open with your invoice template",
+    })
+
+    setWhatsappNumber("")
+  }
+
+  const sendEmail = () => {
+    if (!emailAddress) {
+      toast({
+        title: "Email Required",
+        description: "Please enter the client's email address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailAddress)) {
+      toast({
+        title: "Invalid Email Address",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const subject = `Invoice ${invoiceNumber} - Payment Request of $${amount.toFixed(2)}`
+    const body = `
+Dear Client,
+
+Invoice Details:
+-------------------------------
+Invoice Number: ${invoiceNumber}
+Amount Due: $${amount.toFixed(2)}
+Due Date: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+-------------------------------
+
+Please make your payment using the following link:
+${paymentUrl}
+
+Payment Instructions:
+1. Click the payment link above
+2. Select your preferred payment method
+3. Complete the payment process
+
+If you have any questions, please don't hesitate to contact us.
+
+Thank you for your business!
+
+Sincerely,
+Your Company Name
+    `.trim()
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      emailAddress
+    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
+    window.open(gmailUrl, "_blank")
+
+    toast({
+      title: "Gmail Opened!",
+      description: "Gmail is open with your invoice template",
+    })
+
+    setEmailAddress("")
+  }
+
+  const downloadQRCode = () => {
+    const canvas = document.querySelector<HTMLCanvasElement>("#invoice-qr")
+    if (!canvas) return
+
+    const link = document.createElement("a")
+    link.download = `invoice-${invoiceNumber}-qrcode.png`
+    link.href = canvas.toDataURL("image/png")
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: "QR Code Downloaded!",
+      description: "QR code saved to your device",
     })
   }
 
-  const generateQRCode = () => {
-    // In a real app, you would generate an actual QR code
-    toast({
-      title: "QR Code Generated!",
-      description: "QR code ready for scanning",
-    })
-  }
-
+  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm">
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
+          <Button variant="outline" size="sm" className="gap-2">
+            <Share2 className="h-4 w-4" />
+            Share Invoice
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5" />
-            Share Invoice
-          </DialogTitle>
-          <DialogDescription>Share invoice {invoiceNumber} with your client using multiple methods</DialogDescription>
+      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden rounded-lg">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Share2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl">Share Invoice</DialogTitle>
+              <DialogDescription className="mt-1">
+                Share invoice {invoiceNumber} with your client via multiple methods
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <Tabs defaultValue="link" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="link">Link</TabsTrigger>
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="sms">SMS</TabsTrigger>
-            <TabsTrigger value="qr">QR Code</TabsTrigger>
+        <Tabs defaultValue="link" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-4 rounded-none px-6 py-0 h-12 bg-background">
+            <TabsTrigger value="link" className="py-3 flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Link</span>
+            </TabsTrigger>
+            <TabsTrigger value="email" className="py-3 flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Email</span>
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="py-3 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </TabsTrigger>
+            <TabsTrigger value="qr" className="py-3 flex items-center gap-2">
+              <QrCode className="h-4 w-4" />
+              <span className="hidden sm:inline">QR Code</span>
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="link" className="space-y-4">
-            <div className="space-y-3">
+          <div className="px-6 pb-6 pt-4">
+            {/* Link Tab */}
+            <TabsContent value="link" className="space-y-4 mt-0">
               <div>
-                <Label>Payment Link</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input value={paymentUrl} readOnly className="font-mono text-sm" />
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(paymentUrl, "Link")}>
+                <Label htmlFor="payment-link" className="text-sm font-medium mb-2 block">
+                  Payment Link
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input id="payment-link" value={paymentUrl} readOnly className="font-mono text-sm" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(paymentUrl, "Payment Link")}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
               <div>
-                <Label>Short Link</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input value={shortUrl} readOnly className="font-mono text-sm" />
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(shortUrl, "Short Link")}>
+                <Label htmlFor="short-link" className="text-sm font-medium mb-2 block">
+                  Short Link
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input id="short-link" value={shortUrl} readOnly className="font-mono text-sm" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(shortUrl, "Short Link")}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
+            </TabsContent>
 
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Invoice Details</span>
-                  <Badge variant="outline">{invoiceNumber}</Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Amount:</span>
-                  <span className="font-medium">${amount.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
+            {/* Email Tab */}
+            <TabsContent value="email" className="space-y-4 mt-0">
+              <Label htmlFor="email" className="text-sm font-medium mb-2 block">
+                Client Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                placeholder="client@example.com"
+              />
 
-          <TabsContent value="email" className="space-y-4">
-            <div className="text-center py-8">
-              <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium mb-2">Email Invoice</h3>
-              <p className="text-sm text-muted-foreground mb-4">Send a professional email with payment link</p>
-              <Button className="w-full">
-                <Mail className="h-4 w-4 mr-2" />
+              <Button onClick={sendEmail} className="w-full gap-2 py-2 h-11">
+                <Mail className="h-4 w-4" />
                 Compose Email
               </Button>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="sms" className="space-y-4">
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="phone">Client Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
+            {/* WhatsApp Tab */}
+            <TabsContent value="whatsapp" className="space-y-4 mt-0">
+              <Label htmlFor="whatsapp" className="text-sm font-medium mb-2 block">
+                Client WhatsApp Number
+              </Label>
+              <Input
+                id="whatsapp"
+                type="tel"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="+923001234567"
+              />
 
-              <div className="p-3 bg-muted rounded-lg">
-                <Label className="text-sm font-medium">SMS Preview</Label>
-                <p className="text-sm mt-1">
-                  Hi! Your invoice {invoiceNumber} for ${amount.toFixed(2)} is ready. Pay securely here: {shortUrl}
-                </p>
-              </div>
-
-              <Button onClick={sendSMS} className="w-full">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Send SMS
+              <Button onClick={sendWhatsApp} className="w-full gap-2 py-2 h-11">
+                <MessageSquare className="h-4 w-4" />
+                Send WhatsApp
               </Button>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="qr" className="space-y-4">
-            <div className="text-center py-8">
-              <div className="w-32 h-32 bg-muted rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <QrCode className="h-16 w-16 text-muted-foreground" />
+            {/* QR Tab */}
+            <TabsContent value="qr" className="space-y-4 mt-0">
+              <div className="text-center space-y-4">
+                <div className="flex justify-center">
+                  <div
+                    className="w-48 h-48 bg-white rounded-lg border-2 flex items-center justify-center p-4 shadow-sm cursor-pointer"
+                    onClick={() => (window.location.href = "/terminal")}
+                    title="Click to open payment terminal"
+                  >
+                    <QRCodeCanvas id="invoice-qr" value={`${window.location.origin}/terminal`} size={160} />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button onClick={downloadQRCode} variant="outline" className="flex-1 gap-2 py-2 h-11">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                  <Button
+                    onClick={() => (window.location.href = "/terminal")}
+                    className="flex-1 gap-2 py-2 h-11"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    Open Payment
+                  </Button>
+                </div>
               </div>
-              <h3 className="font-medium mb-2">QR Code Payment</h3>
-              <p className="text-sm text-muted-foreground mb-4">Generate a QR code for easy mobile payments</p>
-              <Button onClick={generateQRCode} className="w-full">
-                <QrCode className="h-4 w-4 mr-2" />
-                Generate QR Code
-              </Button>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
