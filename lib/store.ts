@@ -50,9 +50,26 @@ export interface Draft {
   }
 }
 
+interface Transaction {
+  id: string
+  amount: number
+  currency: string
+  description: string
+  customerEmail?: string
+  customerName?: string
+  customerPhone?: string
+  paymentMethod: string
+  status: string
+  date: string
+  processingFee: number
+  totalWithFees: number
+  methodDetails: any
+}
+
 interface AppState {
   companies: Company[]
   settings: AppSettings
+   transactions: Transaction[]
 
   // Company actions
   addCompany: (company: Omit<Company, "id" | "createdAt" | "stats">) => void
@@ -62,6 +79,9 @@ interface AppState {
 
   // Settings actions
   updateSettings: (settings: Partial<AppSettings>) => void
+
+// Transaction actions
+  addTransaction: (txn: Transaction) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -110,6 +130,15 @@ export const useAppStore = create<AppState>()(
           ),
         }))
       },
+
+          // ✅ transection
+      transactions: [],
+
+addTransaction: (txn) => {
+  set((state) => ({
+    transactions: [...state.transactions, txn],
+  }))
+},
 
       // ✅ Settings
       updateSettings: (newSettings) => {
