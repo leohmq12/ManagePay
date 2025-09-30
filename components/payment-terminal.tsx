@@ -798,7 +798,7 @@ export function PaymentTerminal() {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-4">
         <Button
           onClick={processPayment}
           disabled={isProcessing || !amount || !description || !selectedMethod}
@@ -817,25 +817,7 @@ export function PaymentTerminal() {
             </>
           )}
         </Button>
-        <Button 
-          variant="outline" 
-          onClick={generatePaymentLink} 
-          disabled={isGeneratingLink || !amount || !description}
-          className="w-full"
-          size="lg"
-        >
-          {isGeneratingLink ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Link className="h-4 w-4 mr-2" />
-              Generate Payment Link
-            </>
-          )}
-        </Button>
+        
       </div>
 
       {/* Transaction ID */}
