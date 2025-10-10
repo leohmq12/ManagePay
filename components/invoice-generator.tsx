@@ -179,159 +179,159 @@ export function InvoiceGenerator() {
     setPreviewInvoice(false)
   }
 
- const downloadPDF = () => {
-  if (!validateForm()) return;
-  
-  // Create a print-friendly version
-  const printContent = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
-      <h1 style="text-align: center; color: #333;">INVOICE: ${invoiceNumber}</h1>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        ${dueDate ? `<p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>` : ''}
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; margin: 20px 0; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 250px; margin-bottom: 15px;">
-          <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">From:</h3>
-          <p>${selectedCompany?.name || ''}<br/>
-          ${selectedCompany?.email || ''}<br/>
-          ${selectedCompany?.address || ''}</p>
-        </div>
-        <div style="flex: 1; min-width: 250px;">
-          <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">To:</h3>
-          <p>${clientName}<br/>
-          ${clientEmail}<br/>
-          ${clientAddress}</p>
-        </div>
-      </div>
-      
-      <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
-        <thead>
-          <tr style="background-color: #f5f5f5;">
-            <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Description</th>
-            <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Qty</th>
-            <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Rate</th>
-            <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items.map(item => `
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ddd;">${item.description}</td>
-              <td style="text-align: right; padding: 10px; border: 1px solid #ddd;">${item.quantity}</td>
-              <td style="text-align: right; padding: 10px; border: 1px solid #ddd;">${formatCurrency(item.rate, selectedCurrency)}</td>
-              <td style="text-align: right; padding: 10px; border: 1px solid #ddd;">${formatCurrency(item.amount, selectedCurrency)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      
-      <div style="text-align: right; margin-top: 20px;">
-        <p style="margin: 5px 0;">Subtotal: ${formatCurrency(subtotal, selectedCurrency)}</p>
-        <p style="margin: 5px 0;">Tax (${taxRateNumeric}%): ${formatCurrency(tax, selectedCurrency)}</p>
-        <p style="margin: 10px 0; font-weight: bold; font-size: 1.2em; border-top: 2px solid #333; padding-top: 5px;">
-          Total: ${formatCurrency(total, selectedCurrency)}
-        </p>
-      </div>
-      
-      ${notes ? `
-        <div style="margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #333;">
-          <strong>Notes:</strong><br/>${notes}
-        </div>
-      ` : ''}
-    </div>
-  `;
-  
-  // Open print dialog with better error handling
-  try {
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Invoice ${invoiceNumber}</title>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              body { 
-                font-family: Arial, sans-serif; 
-                margin: 0; 
-                padding: 20px; 
-                color: #333;
-                line-height: 1.4;
-              }
-              @media print {
-                body { 
-                  -webkit-print-color-adjust: exact; 
-                  print-color-adjust: exact;
-                }
-                @page { 
-                  margin: 1cm; 
-                  size: A4;
-                }
-                table { 
-                  page-break-inside: avoid; 
-                }
-                .avoid-break {
-                  page-break-inside: avoid;
-                }
-              }
-              @media all {
-                .page-break { display: none; }
-              }
-              @media print {
-                .page-break { 
-                  display: block; 
-                  page-break-before: always; 
-                }
-              }
-            </style>
-          </head>
-          <body onload="setTimeout(function() { 
-            window.print(); 
-            setTimeout(function() { window.close(); }, 500); 
-          }, 500);">
-            ${printContent}
-            <div class="page-break"></div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      
-      // Focus the window
-      printWindow.focus();
-      
-      toast({ 
-        title: "Print Dialog Opened", 
-        description: "Use your browser's print function to save as PDF." 
-      });
-    } else {
-      throw new Error("Popup blocked by browser");
-    }
-  } catch (error) {
-    console.error("Print error:", error);
-    toast({
-      title: "Print Not Available",
-      description: "Please allow popups for this site or try a different browser.",
-      variant: "destructive",
-    });
+  const downloadPDF = () => {
+    if (!validateForm()) return;
     
-    // Fallback: Show print content in current window
-    const userConfirmed = confirm("Popup was blocked. Click OK to view invoice in this window for printing.");
-    if (userConfirmed) {
-      document.body.innerHTML += `
-        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 10000; padding: 20px; overflow: auto;">
-          <button onclick="this.parentElement.remove()" style="position: fixed; top: 20px; right: 20px; padding: 10px; background: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            Close
-          </button>
-          ${printContent}
+    // Create a print-friendly version
+    const printContent = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
+        <h1 style="text-align: center; color: #333;">INVOICE: ${invoiceNumber}</h1>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          ${dueDate ? `<p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>` : ''}
         </div>
-      `;
+        
+        <div style="display: flex; justify-content: space-between; margin: 20px 0; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 250px; margin-bottom: 15px;">
+            <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">From:</h3>
+            <p>${selectedCompany?.name || ''}<br/>
+            ${selectedCompany?.email || ''}<br/>
+            ${selectedCompany?.address || ''}</p>
+          </div>
+          <div style="flex: 1; min-width: 250px;">
+            <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">To:</h3>
+            <p>${clientName}<br/>
+            ${clientEmail}<br/>
+            ${clientAddress}</p>
+          </div>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #ddd;">
+          <thead>
+            <tr style="background-color: #f5f5f5;">
+              <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Description</th>
+              <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Qty</th>
+              <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Rate</th>
+              <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;">${item.description}</td>
+                <td style="text-align: right; padding: 10px; border: 1px solid #ddd;">${item.quantity}</td>
+                <td style="text-align: right; padding: 10px; border: 1px solid #ddd;">${formatCurrency(item.rate, selectedCurrency)}</td>
+                <td style="text-align: right; padding: 10px; border: 1px solid #ddd;">${formatCurrency(item.amount, selectedCurrency)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div style="text-align: right; margin-top: 20px;">
+          <p style="margin: 5px 0;">Subtotal: ${formatCurrency(subtotal, selectedCurrency)}</p>
+          <p style="margin: 5px 0;">Tax (${taxRateNumeric}%): ${formatCurrency(tax, selectedCurrency)}</p>
+          <p style="margin: 10px 0; font-weight: bold; font-size: 1.2em; border-top: 2px solid #333; padding-top: 5px;">
+            Total: ${formatCurrency(total, selectedCurrency)}
+          </p>
+        </div>
+        
+        ${notes ? `
+          <div style="margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #333;">
+            <strong>Notes:</strong><br/>${notes}
+          </div>
+        ` : ''}
+      </div>
+    `;
+    
+    // Open print dialog with better error handling
+    try {
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Invoice ${invoiceNumber}</title>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { 
+                  font-family: Arial, sans-serif; 
+                  margin: 0; 
+                  padding: 20px; 
+                  color: #333;
+                  line-height: 1.4;
+                }
+                @media print {
+                  body { 
+                    -webkit-print-color-adjust: exact; 
+                    print-color-adjust: exact;
+                  }
+                  @page { 
+                    margin: 1cm; 
+                    size: A4;
+                  }
+                  table { 
+                    page-break-inside: avoid; 
+                  }
+                  .avoid-break {
+                    page-break-inside: avoid;
+                  }
+                }
+                @media all {
+                  .page-break { display: none; }
+                }
+                @media print {
+                  .page-break { 
+                    display: block; 
+                    page-break-before: always; 
+                  }
+                }
+              </style>
+            </head>
+            <body onload="setTimeout(function() { 
+              window.print(); 
+              setTimeout(function() { window.close(); }, 500); 
+            }, 500);">
+              ${printContent}
+              <div class="page-break"></div>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        
+        // Focus the window
+        printWindow.focus();
+        
+        toast({ 
+          title: "Print Dialog Opened", 
+          description: "Use your browser's print function to save as PDF." 
+        });
+      } else {
+        throw new Error("Popup blocked by browser");
+      }
+    } catch (error) {
+      console.error("Print error:", error);
+      toast({
+        title: "Print Not Available",
+        description: "Please allow popups for this site or try a different browser.",
+        variant: "destructive",
+      });
+      
+      // Fallback: Show print content in current window
+      const userConfirmed = confirm("Popup was blocked. Click OK to view invoice in this window for printing.");
+      if (userConfirmed) {
+        document.body.innerHTML += `
+          <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 10000; padding: 20px; overflow: auto;">
+            <button onclick="this.parentElement.remove()" style="position: fixed; top: 20px; right: 20px; padding: 10px; background: #ff4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              Close
+            </button>
+            ${printContent}
+          </div>
+        `;
+      }
     }
-  }
-};
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -529,7 +529,7 @@ export function InvoiceGenerator() {
                 <Label className="text-sm font-medium">Quantity</Label>
                 <Input
                   type="number"
-                  value={item.quantity}
+                  value={item.quantity === 0 ? "" : item.quantity}
                   onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 0)}
                   min="1"
                   className="h-10"
@@ -540,11 +540,22 @@ export function InvoiceGenerator() {
                 <Input
                   type="number"
                   value={item.rate}
+                  onFocus={(e) => {
+                    if (e.target.value === "0") {
+                      e.target.value = "";
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === "") {
+                      updateItem(item.id, "rate", 0);
+                    }
+                  }}
                   onChange={(e) => updateItem(item.id, "rate", parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
                   className="h-10"
                 />
+
               </div>
               <div className="col-span-3 md:col-span-2 space-y-2">
                 <Label className="text-sm font-medium">Amount</Label>
@@ -557,7 +568,7 @@ export function InvoiceGenerator() {
               <div className="col-span-1 flex items-end h-10">
                 <Button 
                   variant="outline" 
-                  size="icon" 
+                  size="sm" 
                   onClick={() => removeItem(item.id)}
                   disabled={items.length <= 1}
                   className="h-10 w-10"
