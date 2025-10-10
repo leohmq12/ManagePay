@@ -1,12 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { signOut } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { FileText, CreditCard, BarChart3, Settings, Building2, Plus, Menu, X } from "lucide-react"
+import { FileText, CreditCard, BarChart3, Settings, Building2, Plus, Menu, X, LogOut, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 const navigation = [
   { name: "Invoice Generator", icon: FileText, href: "/", current: false },
@@ -19,11 +22,28 @@ const navigation = [
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const { toast } = useToast()
+  const user = auth.currentUser
 
   const updatedNavigation = navigation.map((item) => ({
     ...item,
     current: pathname === item.href,
   }))
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully"
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to logout"
+      })
+    }
+  }
 
   return (
     <>
@@ -49,12 +69,22 @@ export function Sidebar() {
           <div className="p-6 border-b border-sidebar-border">
             <h2 className="text-xl font-bold text-sidebar-foreground">PayTerminal</h2>
             <p className="text-sm text-muted-foreground mt-1">Multi-Company Payments</p>
+            
+            {/* User Info */}
+            {user && (
+              <div className="mt-4 flex items-center gap-2 p-2 bg-sidebar-accent rounded-md">
+                <User className="h-3 w-3 text-sidebar-accent-foreground" />
+                <span className="text-xs text-sidebar-accent-foreground truncate">
+                  {user.email}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
             {updatedNavigation.map((item) => (
-              <Link key={item.name} href={item.href}>
+              <Link key={item.name} href={item.href} onClick={() => setIsOpen(false)}>
                 <Button
                   variant={item.current ? "default" : "ghost"}
                   className={cn(
@@ -72,25 +102,36 @@ export function Sidebar() {
           </nav>
 
           {/* Quick Actions */}
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-4 border-t border-sidebar-border space-y-4">
             <Card className="p-4 bg-sidebar-accent">
               <div className="flex items-center gap-3 mb-3">
                 <Plus className="h-4 w-4 text-sidebar-accent-foreground" />
                 <span className="text-sm font-medium text-sidebar-accent-foreground">Quick Actions</span>
               </div>
               <div className="space-y-2">
-                <Link href="/">
+                <Link href="/" onClick={() => setIsOpen(false)}>
                   <Button size="sm" className="w-full text-xs">
                     New Invoice
                   </Button>
                 </Link>
-                <Link href="/terminal">
+                <Link href="/terminal" onClick={() => setIsOpen(false)}>
                   <Button size="sm" variant="outline" className="w-full text-xs bg-transparent">
                     Payment Link
                   </Button>
                 </Link>
               </div>
             </Card>
+
+            {/* Logout Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
       </div>

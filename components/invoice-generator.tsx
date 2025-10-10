@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Send, Eye, Copy, CheckCircle, Download, Mail, Share2 } from "lucide-react"
+import { Plus, Trash2, Send, Eye, Copy, CheckCircle, Download, Building, User, FileText, List, FileEdit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { EmailInvoiceDialog } from "@/components/email-invoice-dialog"
 import { ShareInvoiceDialog } from "@/components/share-invoice-dialog"
@@ -36,7 +36,7 @@ export function InvoiceGenerator() {
   const [clientName, setClientName] = useState("")
   const [clientEmail, setClientEmail] = useState("")
   const [clientAddress, setClientAddress] = useState("")
-  const [invoiceNumber, setInvoiceNumber] = useState("") // fixed hydration mismatch
+  const [invoiceNumber, setInvoiceNumber] = useState("")
   const [dueDate, setDueDate] = useState("")
   const [selectedCurrency, setSelectedCurrency] = useState(settings.defaultCurrency)
   const [taxRate, setTaxRate] = useState<number>(settings.defaultTaxRate * 100)
@@ -336,94 +336,86 @@ export function InvoiceGenerator() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Company Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Your Company</CardTitle>
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-md">
+              <Building className="w-5 h-5 text-primary" />
+            </div>
+            Select Your Company
+          </CardTitle>
           <CardDescription>Choose which company this invoice belongs to</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {companies.length === 0 ? (
             <div className="text-center py-6">
               <p className="mb-3 text-muted-foreground">No companies found. Add one first.</p>
               <Button onClick={() => (window.location.href = "/companies")}>Add Company</Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left side - Dropdown */}
-              <div>
-                <Select onValueChange={(value) => setSelectedCompany(companies.find((c) => c.id === value) || null)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies
-                      .filter((c) => c.isActive)
-                      .map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{company.name}</span>
-                            <span className="text-sm text-muted-foreground">{company.email}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Right side - Selected Company Info */}
-              <div>
-                {selectedCompany ? (
-                  <div className="p-4 bg-muted rounded-lg h-full">
-                    <h4 className="font-medium mb-2">{selectedCompany.name}</h4>
-                    <p className="text-sm text-muted-foreground mb-1">{selectedCompany.address}</p>
-                    <p className="text-sm text-muted-foreground">{selectedCompany.email}</p>
-                    {selectedCompany.phone && (
-                      <p className="text-sm text-muted-foreground">{selectedCompany.phone}</p>
-                    )}
-                    {selectedCompany.website && (
-                      <p className="text-sm text-muted-foreground">{selectedCompany.website}</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-muted/50 rounded-lg h-full flex items-center justify-center">
-                    <p className="text-sm text-muted-foreground text-center">
-                      Select a company to see details
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <>
+              <Select
+                onValueChange={(val) =>
+                  setSelectedCompany(companies.find((c) => c.id === val) || null)
+                }
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.filter((c) => c.isActive).map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name} - {company.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedCompany && (
+                <div className="mt-3 p-3 bg-muted/30 rounded-md">
+                  <p className="font-medium">{selectedCompany.name}</p>
+                  <p className="text-sm">{selectedCompany.email}</p>
+                  <p className="text-sm">{selectedCompany.address}</p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* Client Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Client Information</CardTitle>
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-md">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            Client Information
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Client Name *</Label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Client Name *</Label>
               <Input 
                 value={clientName} 
                 onChange={(e) => setClientName(e.target.value)} 
                 placeholder="Enter client name"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label>Client Email *</Label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Client Email *</Label>
               <Input
                 type="email"
                 value={clientEmail}
                 onChange={(e) => setClientEmail(e.target.value)}
                 placeholder="client@example.com"
+                className="h-10"
               />
             </div>
           </div>
-          <div>
-            <Label>Client Address</Label>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Client Address</Label>
             <Textarea 
               value={clientAddress} 
               onChange={(e) => setClientAddress(e.target.value)} 
@@ -435,85 +427,116 @@ export function InvoiceGenerator() {
       </Card>
 
       {/* Invoice Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice Details</CardTitle>
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-md">
+              <FileText className="w-5 h-5 text-primary" />
+            </div>
+            Invoice Details
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label>Invoice Number</Label>
-              <div className="border rounded-md p-2 bg-muted font-mono text-sm">
-                {invoiceNumber}
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="space-y-2">
+              <Label htmlFor="invoice-number" className="text-sm font-medium">
+                Invoice Number
+              </Label>
+              <div className="flex items-center gap-2">
+                <div className="border rounded-md py-2.5 px-3 bg-muted/30 font-mono text-sm flex-1">
+                  {invoiceNumber}
+                </div>
               </div>
             </div>
-            <div>
-              <Label>Due Date</Label>
+            <div className="space-y-2">
+              <Label htmlFor="due-date" className="text-sm font-medium">Due Date</Label>
               <Input 
+                id="due-date"
                 type="date" 
                 value={dueDate} 
                 onChange={(e) => setDueDate(e.target.value)} 
                 min={new Date().toISOString().split('T')[0]}
+                className="h-10"
               />
             </div>
-            <div>
-              <Label>Currency</Label>
+            <div className="space-y-2">
+              <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                <SelectTrigger>
+                <SelectTrigger id="currency" className="h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.symbol} {c.code}
+                    <SelectItem key={c.code} value={c.code} className="flex items-center gap-2">
+                      <span>{c.symbol}</span>
+                      <span>{c.code}</span>
+                      <span className="text-muted-foreground ml-1">({c.name})</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-           <div className="max-w-xs">
-      <Label>Tax Rate (%)</Label>
-      <Input
-        type="number"
-        value={taxRate}
-        onChange={(e) => setTaxRate(Number(e.target.value) || 0)}
-        min="0"
-        max="100"
-        step="0.1"
-      />
-    </div>
-      
+          
+          <Separator />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-75">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="tax-rate" className="text-sm font-medium">Tax Rate</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="tax-rate"
+                  type="number"
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(Number(e.target.value) || 0)}
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className="h-10"
+                />
+                
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       {/* Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice Items</CardTitle>
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-md">
+              <List className="w-5 h-5 text-primary" />
+            </div>
+            Invoice Items
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {items.map((item) => (
             <div key={item.id} className="grid grid-cols-12 gap-3 items-end">
-              <div className="col-span-12 md:col-span-5">
-                <Label>Description *</Label>
+              <div className="col-span-12 md:col-span-5 space-y-2">
+                <Label className="text-sm font-medium">Description *</Label>
                 <Input
                   value={item.description}
                   onChange={(e) => updateItem(item.id, "description", e.target.value)}
                   placeholder="Item description"
+                  className="h-10"
                 />
               </div>
-              <div className="col-span-4 md:col-span-2">
-                <Label>Quantity</Label> 
+              <div className="col-span-4 md:col-span-2 space-y-2">
+                <Label className="text-sm font-medium">Quantity</Label>
                 <Input
                   type="number"
                   value={item.quantity === 0 ? "" : item.quantity}
                   onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 0)}
                   min="1"
-                />  
+                  className="h-10"
+                />
               </div>
-              <div className="col-span-4 md:col-span-2">
-                <Label>Rate</Label>
+              <div className="col-span-4 md:col-span-2 space-y-2">
+                <Label className="text-sm font-medium">Rate</Label>
                 <Input
                   type="number"
                   value={item.rate}
@@ -530,18 +553,19 @@ export function InvoiceGenerator() {
                   onChange={(e) => updateItem(item.id, "rate", parseFloat(e.target.value) || 0)}
                   min="0"
                   step="0.01"
+                  className="h-10"
                 />
 
               </div>
-              <div className="col-span-3 md:col-span-2">
-                <Label>Amount</Label>
+              <div className="col-span-3 md:col-span-2 space-y-2">
+                <Label className="text-sm font-medium">Amount</Label>
                 <Input 
                   value={formatCurrency(item.amount, selectedCurrency)} 
                   readOnly 
-                  className="bg-muted"
+                  className="bg-muted h-10"
                 />
               </div>
-              <div className="col-span-1">
+              <div className="col-span-1 flex items-end h-10">
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -558,16 +582,16 @@ export function InvoiceGenerator() {
             <Plus className="w-4 h-4 mr-1" /> Add Item
           </Button>
           <Separator />
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal:</span>
-              <span>{formatCurrency(subtotal, selectedCurrency)}</span>
+              <span className="font-medium">{formatCurrency(subtotal, selectedCurrency)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Tax ({taxRateNumeric}%):</span>
-              <span>{formatCurrency(tax, selectedCurrency)}</span>
+              <span className="font-medium">{formatCurrency(tax, selectedCurrency)}</span>
             </div>
-            <div className="flex justify-between font-bold text-lg">
+            <div className="flex justify-between font-bold text-lg pt-2 border-t">
               <span>Total:</span>
               <span>{formatCurrency(total, selectedCurrency)}</span>
             </div>
@@ -576,9 +600,14 @@ export function InvoiceGenerator() {
       </Card>
 
       {/* Notes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Notes</CardTitle>
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-md">
+              <FileEdit className="w-5 h-5 text-primary" />
+            </div>
+            Notes
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
@@ -591,64 +620,83 @@ export function InvoiceGenerator() {
       </Card>
 
       {/* Actions */}
-      <Card>
+      <Card className="border shadow-sm">
         <CardContent className="pt-6">
           {!showSharingOptions ? (
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={generateInvoice} className="flex-1">
-                <Send className="h-4 w-4 mr-2" />
-                Generate Invoice
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button className="flex-1 h-11" onClick={generateInvoice}>
+                <Send className="w-4 h-4 mr-1" /> Generate Invoice
               </Button>
-              <Button variant="outline" onClick={() => setPreviewInvoice(true)} className="flex-1 bg-transparent">
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
+              <Button 
+                className="flex-1 h-11" 
+                variant="outline" 
+                onClick={() => {
+                  if (validateForm()) {
+                    setPreviewInvoice(true)
+                  }
+                }}
+              >
+                <Eye className="w-4 h-4 mr-1" /> Preview Invoice
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="text-center">
-                <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
-                <h3 className="font-medium">Invoice Generated Successfully!</h3>
-                <p className="text-sm text-muted-foreground">Invoice {invoiceNumber} is ready to send</p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
+            <div className="space-y-4 text-center">
+              <CheckCircle className="w-10 h-10 mx-auto text-primary" />
+              <p className="font-medium">Invoice {invoiceNumber} ready to send</p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <EmailInvoiceDialog
                   invoiceId={invoiceNumber}
                   invoiceNumber={invoiceNumber}
                   clientEmail={clientEmail}
                   amount={total}
                   invoiceData={invoiceData}
-                  trigger={
-                    <Button className="flex-1">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email Invoice
-                    </Button>
-                  }
+                  trigger={<Button className="h-10 min-w-[140px]">Email Invoice</Button>}
                 />
-
+              
                 <ShareInvoiceDialog
                   invoiceId={invoiceNumber}
                   invoiceNumber={invoiceNumber}
                   amount={total}
                   trigger={
-                    <Button variant="outline" className="flex-1 bg-transparent">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share Link
+                    <Button variant="outline" className="h-10 min-w-[140px]">
+                      Share link
                     </Button>
                   }
                 />
 
-                <Button variant="outline" className="flex-1 bg-transparent" onClick={resetInvoice}>
+                 <Button 
+                variant="outline" 
+                className="h-10 min-w-[140px]"
+                onClick={() => {
+                  if (validateForm()) {
+                    setPreviewInvoice(true)
+                  }
+                }}
+              >
+                <Eye className="w-4 h-4 mr-1" /> Preview Invoice
+              </Button>
+
+
+                <Button 
+                  variant="outline" 
+                  className="h-10 min-w-[140px]"
+                  onClick={downloadPDF}
+                >
+                  <Download className="w-4 h-4 mr-1" /> Download PDF
+                </Button>
+
+                <Button 
+                variant="outline" 
+                className="h-10 min-w-[140px]"
+                onClick={resetInvoice}>
                   Create Another
                 </Button>
-                <Button variant="outline" onClick={() => setPreviewInvoice(true)} className="flex-1 bg-transparent">
-                <Eye className="h-4 w-4 mr-2" />
-                Preview Invoice
-              </Button>
+
               </div>
             </div>
           )}
+
           {previewInvoice && (
             <div className="mt-6">
               <div className="flex justify-between mb-3">
